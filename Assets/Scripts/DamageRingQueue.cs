@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ST.HUD
 {
-    public struct FloatingText
+    public struct FloatingDamage
     {
         public uint3x3 uvVexIdx;
         public float2 scale;
@@ -11,12 +11,12 @@ namespace ST.HUD
         public float fixedTime;
     }
 
-    public class FloatingTextBuffer
+    public class DamageRingQueue
     {
-        private static FloatingTextBuffer instance = default;
-        public static FloatingTextBuffer Instance => instance;
+        private static DamageRingQueue instance = default;
+        public static DamageRingQueue Instance => instance;
 
-        private readonly FloatingText[] _buffer;
+        private readonly FloatingDamage[] _buffer;
         private int _head;
         private int _tail;
         private int _transfer;
@@ -24,17 +24,17 @@ namespace ST.HUD
         
         public int Count => (_tail - _head + _capacity) % _capacity;
 
-        public FloatingTextBuffer(int capacity)
+        public DamageRingQueue(int capacity)
         {
             _capacity = capacity;
-            _buffer = new FloatingText[_capacity];
+            _buffer = new FloatingDamage[_capacity];
             _head = 0;
             _tail = 0;
             _transfer = 0;
             instance = this;
         }
         
-        public void Enqueue(FloatingText item)
+        public void Enqueue(FloatingDamage item)
         {
             _buffer[_tail] = item;
             _tail = (_tail + 1) % _capacity;

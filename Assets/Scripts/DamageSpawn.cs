@@ -3,7 +3,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class FloatingTextSpawn : MonoBehaviour
+public class DamageSpawn : MonoBehaviour
 {
     public Text textCount;
     public Text textFPS;
@@ -21,14 +21,14 @@ public class FloatingTextSpawn : MonoBehaviour
         uint3x3 index = new uint3x3();
         FontMeshHelper.SetIndex(style, damage, ref index);
         
-        FloatingText data = new FloatingText
+        FloatingDamage data = new FloatingDamage
         {
             wpos = wpos,
             uvVexIdx = index,
             scale = new float2(1f, 1f),
             fixedTime = (float)elapsedTime
         };
-        FloatingTextBuffer.Instance.Enqueue(data);
+        DamageRingQueue.Instance.Enqueue(data);
     }
 
     private void Update()
@@ -41,7 +41,7 @@ public class FloatingTextSpawn : MonoBehaviour
         elapsedTime -= Time.deltaTime;
         if (elapsedTime <= 0)
         {
-            textCount.text = FloatingTextBuffer.Instance.Count.ToString();
+            textCount.text = DamageRingQueue.Instance.Count.ToString();
             textFPS.text = (1.0f / Time.unscaledDeltaTime).ToString("F0");
             elapsedTime += 1.0f;
         }

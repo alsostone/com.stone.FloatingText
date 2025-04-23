@@ -42,7 +42,7 @@ Shader "DMII/Damage"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
             
-            struct FloatingText
+            struct FloatingDamage
             {
                 uint3x3 uvVexIdx;
                 float2 scale;
@@ -53,7 +53,7 @@ Shader "DMII/Damage"
             sampler2D _MainTex;
             float4 _MainTex_ST;
             
-            StructuredBuffer<FloatingText> _InstanceBuffer;
+            StructuredBuffer<FloatingDamage> _InstanceBuffer;
             StructuredBuffer<uint> _VisibleBuffer;
             StructuredBuffer<float2> _TextUvs;
             StructuredBuffer<float2> _TextVets;

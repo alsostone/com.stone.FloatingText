@@ -4,13 +4,14 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using ST.HUD;
 
-public class FloatingTextRenderer : MonoBehaviour
+public class DamageRenderer : MonoBehaviour
 {
-    [SerializeField] int MAX_RENDER_COUNT = 51200;
+    [SerializeField] int MAX_RENDER_COUNT = 102400;
     [SerializeField] Material material;
     [SerializeField] Font font;
     [SerializeField] [Range(0, 31)] int layer;
     
+    private DamageRingQueue damageRingQueue;
     private Bounds renderBounds = new Bounds();
     private Mesh renderMesh;
 
@@ -19,8 +20,7 @@ public class FloatingTextRenderer : MonoBehaviour
     private ComputeBuffer uvsBuffer;
     private ComputeBuffer vetsBuffer;
     
-    private FloatingTextBuffer floatingTextBuffer;
-    private int computekernel;
+    private int computeKernel;
     public ComputeShader computeShader;
     private ComputeBuffer instanceBuffer;
     private ComputeBuffer visibleBuffer;
@@ -42,7 +42,7 @@ public class FloatingTextRenderer : MonoBehaviour
     
     void Start()
     {
-        floatingTextBuffer = new FloatingTextBuffer(MAX_RENDER_COUNT);
+        damageRingQueue = new DamageRingQueue(MAX_RENDER_COUNT);
         renderBounds = new Bounds(Vector3.zero, Vector3.one * 1000);
         
         renderMesh = FontMeshHelper.CreateMesh(font);
@@ -109,25 +109,25 @@ public class FloatingTextRenderer : MonoBehaviour
 
     void InitAnimationBuffer()
     {
-        instanceBuffer = new ComputeBuffer(MAX_RENDER_COUNT, Marshal.SizeOf(typeof(FloatingText)), ComputeBufferType.IndirectArguments);
+        instanceBuffer = new ComputeBuffer(MAX_RENDER_COUNT, Marshal.SizeOf(typeof(FloatingDamage)), ComputeBufferType.IndirectArguments);
         visibleBuffer = new ComputeBuffer(MAX_RENDER_COUNT, sizeof(uint), ComputeBufferType.Append);
 
-        computekernel = computeShader.FindKernel("UpdateAnimations");
-        computeShader.SetBuffer(computekernel, InstanceBuffer, instanceBuffer);
-        computeShader.SetBuffer(computekernel, VisibleBuffer, visibleBuffer);
+        computeKernel = computeShader.FindKernel("UpdateAnimations");
+        computeShader.SetBuffer(computeKernel, InstanceBuffer, instanceBuffer);
+        computeShader.SetBuffer(computeKernel, VisibleBuffer, visibleBuffer);
         computeShader.SetFloat(Duration, 1.0f);
     }
     
     private void LateUpdate()
     {
-        floatingTextBuffer.TryAppendData(instanceBuffer);
+        damageRingQueue.TryAppendData(instanceBuffer);
 
         visibleBuffer.SetCounterValue(0);
         computeShader.SetFloat(ElapsedTime, Time.time);
         computeShader.SetFloat(DeltaTime, Time.deltaTime);
 
         var threadGroups = Mathf.CeilToInt(instanceBuffer.count / 64.0f);
-        computeShader.Dispatch(computekernel, threadGroups, 1, 1);
+        computeShader.Dispatch(computeKernel, threadGroups, 1, 1);
 
         ComputeBuffer.CopyCount(visibleBuffer, argsBuffer, sizeof(uint));
         Graphics.DrawMeshInstancedIndirect(renderMesh, 0, material, renderBounds, argsBuffer, 0, propertyBlock,
