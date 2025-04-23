@@ -1,0 +1,54 @@
+#pragma kernel UpdateAnimations
+
+struct FloatingText
+{
+    uint3x3 uvVexIdx;
+    float2 scale;
+    float3 wpos;
+    float fixedTime;
+};
+
+RWStructuredBuffer<FloatingText> _InstanceBuffer;
+AppendStructuredBuffer<uint> _VisibleBuffer;
+
+float _ElapsedTime;
+float _DeltaTime;
+float _Duration;
+
+// ElasticOut 缓动函数实现
+#define HALF_PI 1.5707963f
+float ElasticOut(const float delta)
+{
+    return sin(-13.0f * (delta + 1.0f) * HALF_PI) * pow(2.0f, -10.0f * delta) + 1.0f;
+}
+
+[numthreads(64,1,1)]
+void UpdateAnimations(uint3 id : SV_DispatchThreadID)
+{
+    FloatingText data = _InstanceBuffer[id.x];
+    const float elapsed = _ElapsedTime - data.fixedTime;
+
+    // 测试性能时注释掉
+    // if (elapsed >= _Duration)
+    //     return;
+
+    // 计算进度
+    float x = elapsed / (_Duration * 0.5f);
+
+    // 缩放动画
+    float startScale = 2.0f;
+    float endScale = 1.0f;
+    float scale = startScale + ElasticOut(x) * (endScale - startScale);
+
+    // 位移动画
+    if(data.wpos.y < 4.0f)
+    {
+        float posDelta = lerp(0.0f, 3.0f, x) * _DeltaTime;
+        data.wpos += float3(0.0f, posDelta, 0.0f);
+    }
+
+    // 写回缓冲区
+    data.scale = scale;
+    _InstanceBuffer[id.x] = data;
+    _VisibleBuffer.Append(id.x);
+}
